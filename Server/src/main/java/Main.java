@@ -1,26 +1,28 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("ВВеди номер порта из файла setting.txt");
-        String input = scanner.nextLine();
-        int port = Integer.parseInt(input);
-        ServerSocket serverSocket = new ServerSocket(port);
-        System.out.println("Server started");
-        while (true) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("Server/setting.txt"))) {
+            String value = reader.readLine();
+            String[] parts = value.split(" ");
+            int port = Integer.parseInt(parts[1]);
+            ServerSocket serverSocket = new ServerSocket(port);
+            System.out.println("Server started");
 
-            Socket socket = serverSocket.accept();
+            while (true) {
+                Socket socket = serverSocket.accept();
+                new MyServer(socket).start();
 
-
-            new MyServer(socket).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
     }
 
 }

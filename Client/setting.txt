@@ -1,1 +1,2 @@
-IpAddress=localhost; port= 8189
+IpAddress= localhost
+port= 8189

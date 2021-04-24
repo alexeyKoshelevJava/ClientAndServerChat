@@ -3,30 +3,29 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-public class ClientConnection extends Thread {
+public class ClientConnection {
     private Socket socket;
     private final BufferedReader in;
     private final BufferedWriter out;
     private final String nickName;
-    private final Thread rxThread;
+    private final Thread listener;
 
 
     public ClientConnection(String nickName, String ip, int port) throws IOException {
         try {
             this.socket = new Socket(ip, port);
         } catch (IOException e) {
-            System.err.println("Socket failed");
+           logAndPrint("Socket failed");
         }
         this.nickName = nickName;
         in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
         out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-        rxThread = new Thread(() -> {
+        listener = new Thread(() -> {
 
             String line;
             try {
                 line = in.readLine();
-                System.out.println(line);
-                MyClient.logger.info(line);
+                logAndPrint(line);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -39,20 +38,19 @@ public class ClientConnection extends Thread {
                             disconnect();
                             break;
                         }
-                        System.out.println(line);
-                        MyClient.logger.info(line);
+                        logAndPrint(line);
                     }
                 }
 
             } catch (IOException e) {
-                System.out.println("Connection " + ClientConnection.this + " exeption: " + e);
-                MyClient.logger.info("Connection " + ClientConnection.this + " exeption: " + e);
+                logAndPrint("Connection " + ClientConnection.this + " exeption: " + e);
             } finally {
-                System.out.println("Connection disconnected");
-                MyClient.logger.info("Connection " + ClientConnection.this + " disconnected");
+
+                logAndPrint("Connection " + ClientConnection.this + " disconnected");
+                ClientConnection.this.disconnect();
             }
         });
-        rxThread.start();
+        listener.start();
         writeMsg();
     }
 
@@ -67,14 +65,15 @@ public class ClientConnection extends Thread {
     }
 
     private synchronized void disconnect() {
-        rxThread.interrupt();
+        listener.interrupt();
         try {
             in.close();
             out.close();
             socket.close();
 
         } catch (IOException e) {
-            System.out.println("Connection " + ClientConnection.this + " exeption: " + e);
+
+            logAndPrint("Connection " + ClientConnection.this + " exeption: " + e);
         }
 
     }
@@ -102,9 +101,15 @@ public class ClientConnection extends Thread {
 
 
             } catch (IOException e) {
-                System.out.println("Connection " + ClientConnection.this + " exeption: " + e);
+                logAndPrint("Connection " + ClientConnection.this + " exeption: " + e);
             }
         }
+
+    }
+
+    private void logAndPrint(String line) {
+        MyClient.logger.info(line);
+        System.out.println(line);
 
     }
 }
